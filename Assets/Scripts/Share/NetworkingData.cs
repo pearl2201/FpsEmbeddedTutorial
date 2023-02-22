@@ -4,6 +4,26 @@ using DarkRift;
 
 using UnityEngine;
 
+public struct LoginRequestData : IDarkRiftSerializable
+{
+	public string Name;
+
+	public LoginRequestData(string name)
+	{
+		Name = name;
+	}
+
+	public void Deserialize(DeserializeEvent e)
+	{
+		Name = e.Reader.ReadString();
+	}
+
+	public void Serialize(SerializeEvent e)
+	{
+		e.Writer.Write(Name);
+	}
+}
+
 public struct LoginInfoData : IDarkRiftSerializable
 {
 	public ushort Id;
@@ -109,6 +129,11 @@ public struct PlayerInputData : IDarkRiftSerializable
 		Keyinputs = keyInputs;
 		LookDirection = lookdirection;
 		Time = time;
+	}
+
+	public override string ToString()
+	{
+		return $"W: {Keyinputs[0]}, A: {Keyinputs[1]}, S: {Keyinputs[2]}, D: {Keyinputs[3]}, Space: {Keyinputs[4]}, LeftClick: {Keyinputs[5]}, quaternion: {LookDirection}, {Time}: {Time}";
 	}
 
 	public void Deserialize(DeserializeEvent e)

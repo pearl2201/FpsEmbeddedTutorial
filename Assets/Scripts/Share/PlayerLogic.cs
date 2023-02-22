@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(TankController))]
 public class PlayerLogic : MonoBehaviour
 {
 	private Vector3 gravity;
@@ -13,11 +13,11 @@ public class PlayerLogic : MonoBehaviour
 	[SerializeField]
 	private float jumpStrength;
 
-	public CharacterController CharacterController { get; private set; }
+	public TankController TankController { get; private set; }
 
 	void Awake()
 	{
-		CharacterController = GetComponent<CharacterController>();
+		TankController = GetComponent<TankController>();
 	}
 
 	public PlayerStateData GetNextFrameData(PlayerInputData input, PlayerStateData currentStateData)
@@ -50,28 +50,28 @@ public class PlayerLogic : MonoBehaviour
 			movement += Vector3.right;
 		}
 
-		movement = Quaternion.Euler(0, rotation.y, 0) * movement; // Move towards the look direction.
+		//movement = Quaternion.Euler(0, rotation.y, 0) * movement; // Move towards the look direction.
 		movement.Normalize();
 		movement = movement * walkSpeed;
 
-		movement = movement * Time.fixedDeltaTime;
-		movement = movement + gravity * Time.fixedDeltaTime;
+		//movement = movement * Time.fixedDeltaTime;
+		//movement = movement + gravity * Time.fixedDeltaTime;
 
-		CharacterController.Move(new Vector3(0, -0.001f, 0));
+		//TankController.Move(new Vector3(0, -0.001f, 0));
 
-		if (CharacterController.isGrounded)
-		{
-			if (space)
-			{
-				gravity = new Vector3(0, jumpStrength, 0);
-			}
-		}
-		else
-		{
-			gravity -= new Vector3(0, gravityConstant, 0);
-		}
+		//if (CharacterController.isGrounded)
+		//{
+		//	if (space)
+		//	{
+		//		gravity = new Vector3(0, jumpStrength, 0);
+		//	}
+		//}
+		//else
+		//{
+		//	gravity -= new Vector3(0, gravityConstant, 0);
+		//}
 
-		CharacterController.Move(movement);
+		TankController.Move(movement);
 
 		return new PlayerStateData(currentStateData.Id, gravity.y, transform.localPosition, input.LookDirection);
 	}

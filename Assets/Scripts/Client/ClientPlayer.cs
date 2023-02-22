@@ -3,6 +3,8 @@ using System.Linq;
 
 using DarkRift;
 
+using TMPro;
+
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -48,11 +50,9 @@ public class ClientPlayer : MonoBehaviour
 
 	[Header("HealthBar")]
 	[SerializeField]
-	private Text nameText;
+	private TMP_Text nameText;
 	[SerializeField]
-	private Image healthBarFill;
-	[SerializeField]
-	private GameObject healthBarObject;
+	private Slider healthSlider;
 
 	[Header("Prefabs")]
 	[SerializeField]
@@ -73,9 +73,9 @@ public class ClientPlayer : MonoBehaviour
 		if (ConnectionManager.Instance.PlayerId == id)
 		{
 			isOwn = true;
-			Camera.main.transform.SetParent(transform);
-			Camera.main.transform.localPosition = new Vector3(0, 0, 0);
-			Camera.main.transform.localRotation = Quaternion.identity;
+			//Camera.main.transform.SetParent(transform);
+			//Camera.main.transform.localPosition = new Vector3(0, 0, 0);
+			//Camera.main.transform.localRotation = Quaternion.identity;
 			interpolation.CurrentData = new PlayerStateData(this.id, 0, Vector3.zero, Quaternion.identity);
 		}
 	}
@@ -83,20 +83,13 @@ public class ClientPlayer : MonoBehaviour
 	public void SetHealth(int value)
 	{
 		health = value;
-		healthBarFill.fillAmount = value / 100f;
+		healthSlider.value = health;
 	}
 
 	void LateUpdate()
 	{
 		Vector3 point = Camera.main.WorldToScreenPoint(transform.position + new Vector3(0, 1, 0));
-		if (point.z > 2)
-		{
-			healthBarObject.transform.position = point;
-		}
-		else
-		{
-			healthBarObject.transform.position = new Vector3(10000, 0, 0);
-		}
+
 	}
 
 	void FixedUpdate()
@@ -124,18 +117,23 @@ public class ClientPlayer : MonoBehaviour
 
 			Quaternion rotation = Quaternion.Euler(pitch, yaw, 0);
 
-			PlayerInputData inputData = new PlayerInputData(inputs, rotation, GameManager.Instance.LastReceivedServerTick - 1);
+			PlayerInputData inputData = new PlayerInputData(inputs, rotation, FpsGameManager.Instance.LastReceivedServerTick - 1);
 
-			transform.position = interpolation.CurrentData.Position;
-			PlayerStateData nextStateData = playerLogic.GetNextFrameData(inputData, interpolation.CurrentData);
-			interpolation.SetFramePosition(nextStateData);
+			//transform.position = interpolation.CurrentData.Position;
+			 playerLogic.GetNextFrameData(inputData, interpolation.CurrentData);
+			PlayerStateData nextStateData = new PlayerStateData()
+			{
+				LookDirection = transform.rotation,
+				Position = transform.position
+			};
+			//interpolation.SetFramePosition(nextStateData);
 
 			using (Message message = Message.Create((ushort)Tags.GamePlayerInput, inputData))
 			{
 				ConnectionManager.Instance.Client.SendMessage(message, SendMode.Reliable);
 			}
 
-			reconciliationHistory.Enqueue(new ReconciliationInfo(GameManager.Instance.ClientTick, nextStateData, inputData));
+			//reconciliationHistory.Enqueue(new ReconciliationInfo(FpsGameManager.Instance.ClientTick, nextStateData, inputData));
 		}
 	}
 
@@ -143,12 +141,12 @@ public class ClientPlayer : MonoBehaviour
 	{
 		if (isOwn)
 		{
-			while (reconciliationHistory.Any() && reconciliationHistory.Peek().Frame < GameManager.Instance.LastReceivedServerTick)
+			while (reconciliationHistory.Any() && reconciliationHistory.Peek().Frame < FpsGameManager.Instance.LastReceivedServerTick)
 			{
 				reconciliationHistory.Dequeue();
 			}
 
-			if (reconciliationHistory.Any() && reconciliationHistory.Peek().Frame == GameManager.Instance.LastReceivedServerTick)
+			if (reconciliationHistory.Any() && reconciliationHistory.Peek().Frame == FpsGameManager.Instance.LastReceivedServerTick)
 			{
 				ReconciliationInfo info = reconciliationHistory.Dequeue();
 				if (Vector3.Distance(info.Data.Position, playerStateData.Position) > 0.05f)
@@ -160,15 +158,21 @@ public class ClientPlayer : MonoBehaviour
 					transform.rotation = playerStateData.LookDirection;
 					for (int i = 0; i < infos.Count; i++)
 					{
-						PlayerStateData u = playerLogic.GetNextFrameData(infos[i].Input, interpolation.CurrentData);
-						interpolation.SetFramePosition(u);
+						playerLogic.GetNextFrameData(infos[i].Input, interpolation.CurrentData);
+						Physics.Simulate(Time.fixedDeltaTime);
 					}
 				}
 			}
+
+			
+			//transform.position = playerStateData.Position;
+			//transform.rotation = playerStateData.LookDirection;
 		}
 		else
 		{
-			interpolation.SetFramePosition(playerStateData);
+			//interpolation.SetFramePosition(playerStateData);
+			transform.position = playerStateData.Position;
+			transform.rotation = playerStateData.LookDirection;
 		}
 	}
 }

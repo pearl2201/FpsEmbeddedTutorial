@@ -24,14 +24,14 @@ public class RoomManager : MonoBehaviour
 		}
 		Instance = this;
 		DontDestroyOnLoad(this);
-		CreateRoom("Main", 25);
-		CreateRoom("Main 2", 15);
+		CreateRoom("Main", 0, 25);
+		//CreateRoom("Main 2", 1, 15);
 	}
 
-	public void CreateRoom(string roomName, byte maxSlots)
+	public void CreateRoom(string roomName, int idx, byte maxSlots)
 	{
 		GameObject go = Instantiate(roomPrefab);
-		go.transform.position = new Vector3(Random.RandomRange(-4, 4), Random.RandomRange(-4, 4), 0);
+		go.transform.position = new Vector3(0, 0, 0);
 		Room room = go.GetComponent<Room>();
 		room.Initialize(roomName, maxSlots);
 		rooms.Add(roomName, room);

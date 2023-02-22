@@ -1,11 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
+
+
 using Assets.Scripts.Share;
 
 using DarkRift;
 using DarkRift.Server;
-
-using UnityEditor;
 
 using UnityEngine;
 
@@ -13,8 +11,8 @@ public class ClientConnection
 {
 	public string Name { get; }
 	public IClient Client { get; }
-
 	public Room Room { get; set; }
+	public ServerPlayer Player { get; set; }
 
 	public ClientConnection(IClient client, LoginRequestData data)
 	{
@@ -24,14 +22,13 @@ public class ClientConnection
 		ServerManager.Instance.Players.Add(client.ID, this);
 		ServerManager.Instance.PlayersByName.Add(Name, this);
 
+		Client.MessageReceived += OnMessage;
+
 		using (Message m = Message.Create((ushort)Tags.LoginRequestAccepted, new LoginInfoData(client.ID, new LobbyInfoData(RoomManager.Instance.GetRoomDataList()))))
 		{
 			client.SendMessage(m, SendMode.Reliable);
 		}
-
-		Client.MessageReceived += OnMessage;
 	}
-
 
 	private void OnMessage(object sender, MessageReceivedEventArgs e)
 	{
@@ -43,6 +40,12 @@ public class ClientConnection
 				case Tags.LobbyJoinRoomRequest:
 					RoomManager.Instance.TryJoinRoom(client, message.Deserialize<JoinRoomRequest>());
 					break;
+				case Tags.GameJoinRequest:
+					Room.JoinPlayerToGame(this);
+					break;
+				case Tags.GamePlayerInput:
+					Player.RecieveInput(message.Deserialize<PlayerInputData>());
+					break;
 			}
 		}
 	}
@@ -53,10 +56,9 @@ public class ClientConnection
 		{
 			Room.RemovePlayerFromRoom(this);
 		}
+
 		ServerManager.Instance.Players.Remove(Client.ID);
 		ServerManager.Instance.PlayersByName.Remove(Name);
 		e.Client.MessageReceived -= OnMessage;
 	}
-
-	
 }
